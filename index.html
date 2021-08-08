@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Kingdoms & Warfare Battlefield</title>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+		<link rel="stylesheet" href="styles.css" />
+
+		<script src="libraries/peerjs.min.js"></script>
+		<script src="libraries/jscolor.min.js"></script>
+
+		<script src="script_data.js"></script>
+		<script src="script_events.js"></script>
+		<script src="script_gui.js"></script>
+		<script src="script_network.js"></script>
+		<script src="script_utility.js"></script>
+		<script src="script_generate_elements.js"></script>
+		<script src="script_turn_tracker.js"></script>
+		<script src="script_commander_manager.js"></script>
+		<script src="script_board.js"></script>
+		<script src="script_chat.js"></script>
+		<script src="script_trait_manager.js"></script>
+		<script src="script_unit_manager.js"></script>
+		<script src="script_menu_panel.js"></script>
+
+		<style id="unit_owner_styles"></style>
+		<style id="unit_owner_turn_styles"></style>
+	</head>
+	<body>
+		<div id="battlefield"></div>
+		<canvas id="overlay"></canvas>
+
+		<!-- <editor-fold> GUI ELEMENTS -->
+		<div class="menu_panel_show_button" onclick="Menu_Panel.show_menu_panel()"></div>
+		<div class="menu_panel concealed" id="menu_panel" onmodalshow="Menu_Panel.update_unit_list();" onmouseleave="Menu_Panel.Events.on_panel_leave(event)" onmouseenter="Menu_Panel.Events.on_panel_enter(event)">
+			<div class="menu_button hide_menu" onclick="Menu_Panel.hide_menu_panel()" title="Hide menu"></div>
+			<div class="menu_button pin_menu" onclick="Menu_Panel.toggle_pin_menu_panel()" title="Toggle pin menu"></div>
+<!--			<div class="menu_button settings" onclick="" title="Settings"></div>-->
+			<div class="menu_button trait_manager" onclick="GUI.show_modal('trait_manager')" title="Trait manager"></div>
+			<div class="menu_button unit_manager" onclick="GUI.show_modal('unit_manager')" title="Unit manager"></div>
+			<div class="menu_button commander_manager" onclick="GUI.show_modal('commander_manager')" title="Commander manager"></div>
+			<div class="menu_divider"></div>
+			<h4>Unit library</h4>
+			<div id="menu_panel_unit_container"></div>
+			<div id="out_of_formation" class="out_of_formation" ondragenter="Board.Events.on_drag_enter(event)">
+				<h4 style="text-align: center; margin-top: 4px;">Out of formation</h4>
+				<div id="out_of_formation_units"></div>
+			</div>
+			<div id="chat_panel" class="chat_panel">
+				<div id="chat_panel_messages" class="chat_panel_messages"></div>
+				<div class="chat_panel_textbox">
+					<input id="chat_panel_input" class="form-control" style="width: 214px; display: inline-block;" onkeydown="Chat.on_chat_key_down(event)" />
+					<div class="btn btn-primary" style="margin-top: -5px;" onclick="Chat.chatbox_submit();">Send</div>
+				</div>
+			</div>
+		</div>
+		<div id="bubble_menu" class="bubble_menu hidden">
+			<div class="sub_bubble" onclick="GUI.hide_bubble_menu()">✕</div>
+			<div class="sub_bubble bub1" id="bub1">1</div>
+			<div class="sub_bubble bub2" id="bub2">2</div>
+			<div class="sub_bubble bub3" id="bub3">3</div>
+			<div class="sub_bubble bub4" id="bub4">4</div>
+		</div>
+		<div id="turn_tracker" class="turn_tracker">
+			<div class="title">Turn</div>
+			<div id="turn_indicator" class="turn_indicator">
+				<div class="rear"></div>
+				<div class="front"></div>
+			</div>
+			<div id="turn_tracker_entries" class="turn_tracker_entries"></div>
+			<div id="next_turn_button" title="Advance turn" onclick="Turn_Tracker.advance_turn();"></div>
+			<div id="turn_display">Turn 1</div>
+			<div id="round_display">Round 0 (Deployment)</div>
+		</div>
+		<div id="tier_tracker" class="tier_tracker">
+			<div class="title">Tier totals</div>
+			<div id="tier_list" class="tier_list">
+				<span style="font-size: 9pt">
+				When it's all over<br/>
+				what will begin in its place?<br/>
+				Will it be better?<br/>
+				-- Lecco Morris 2020</span>
+			</div>
+		</div>
+		<!-- </editor-fold> -->
+
+		<!-- <editor-fold> DYNAMIC MODALS -->
+		<div id="icon_selector" class="icon_selector dynamic_modal hidden" onupdate="GUI.update_icon_selector()" onmodalshow="GUI.update_icon_selector()">
+			<h4>Select icon</h4>
+			<div id="icon_container">
+			</div>
+		</div>
+		<!-- </editor-fold> -->
+
+		<!-- <editor-fold> STATIC MODALS -->
+		<div id="host_or_client" class="mod container">
+			<h2 class="align_center">Choose mode</h2>
+			<div class="row">
+				<div class="col align_center"><div class="btn-lg btn-danger" onclick="onclick_host(event)">Host</div></div>
+				<div class="col align_center"><div class="btn-lg btn-info" onclick="onclick_client(event)">Client</div></div>
+			</div>
+		</div>
+		<div id="connect_host" class="mod hidden">
+			<h2>Waiting for client connections</h2>
+			<div>Host ID:</div>
+			<div><input type="text" id="host_id_output" readonly="readonly" /></div>
+			<div id="host_clients_wait">
+				<div>Waiting for client connections...</div>
+				<div class="loader align_center">Loading...</div>
+			</div>
+			<div id="host_clients_connected" class="hidden" style="margin-top: 20px;">
+				Connected clients:
+				<ul id="host_clients_list"></ul>
+				<div class="align_center">
+					<div class="btn btn-success" onclick="start_game()">Start</div>
+				</div>
+			</div>
+		</div>
+		<div id="connect_client" class="mod hidden">
+			<h2>Connect to host</h2>
+			<div class="row">
+				<div class="col-md-12"><input class="form-control" type="text" placeholder="Host ID" id="host_id_input" /></div>
+			</div>
+			<div class="row">
+				<div class="col-md-12"><input class="form-control" type="text" placeholder="Your nickname" id="nickname_input" /></div>
+			</div>
+			<div class="row">
+				<div class="col-md-12"><div class="btn btn-success" onclick="register_client()">Connect</div></div>
+			</div>
+			<div id="client_error_output" class="error hidden"></div>
+		</div>
+		<div id="standby_client" class="mod hidden">
+			<div>Waiting for game start</div>
+			<div class="loader align_center">Loading...</div>
+		</div>
+		<div id="game_window" class="mod hidden">
+			<div class="btn-lg btn-success" onclick="Events.big_game_button()">Big Game Button</div>
+		</div>
+		<div id="unit_manager" class="mod wide hidden" onupdate="Unit_Manager.update_unit_list(); Unit_Manager.update_trait_list();">
+			<div class="mod_close_btn" onclick="GUI.hide_modal('unit_manager')"></div>
+			<input type="hidden" id="unit_editor_current_unit_index" />
+			<h2>Unit Manager</h2>
+			<div class="row">
+				<div class="col-5" style="border-right: 2px solid white;">
+					<div id="unit_editor_unit_list" class="editor_unit_list">No units to list</div>
+					<div onclick="GUI.hide_modal('unit_manager'); GUI.show_modal('unit_import_export');" style="cursor: pointer;">Import/Export units</div>
+				</div>
+				<div class="col-7">
+					<label for="unit_editor_name">Special unit name: (Optional)</label>
+					<input class="form-control" id="unit_editor_name" placeholder="Default: Ancestry + Type" />
+					<div class="row">
+						<div class="col-6">
+							<label for="unit_editor_type">Type</label>
+							<select class="form-control" id="unit_editor_type">
+								<option>Infantry</option>
+								<option>Artillery</option>
+								<option>Cavalry</option>
+								<option>Aerial</option>
+								<option>Siege</option>
+							</select>
+						</div>
+						<div class="col-6">
+							<label for="unit_editor_ancestry">Ancestry</label>
+							<select class="form-control" id="unit_editor_ancestry">
+								<option>Dragonborn</option>
+								<option>Human</option>
+								<option>Dwarf</option>
+								<option>Kobold</option>
+								<option>Elf</option>
+								<option>Lizardfolk</option>
+								<option>Fiend</option>
+								<option>Monstrous</option>
+								<option>Giant</option>
+								<option>Orc</option>
+								<option>Gnoll</option>
+								<option>Special</option>
+								<option>Gnome</option>
+								<option>Undead</option>
+								<option>Goblinoid</option>
+							</select>
+						</div>
+					</div>
+					<div>
+						<div>Traits:</div>
+						<div><input type="search" id="unit_manager_trait_search" class="form-control" placeholder="Type here to search traits" style="height: 1.6em;" onkeydown="Unit_Manager.trait_search(event)" onclick="Unit_Manager.trait_search(event)" /></div>
+						<div id="unit_manager_trait_list"></div>
+					</div>
+					<div style="margin-top: 10px;">
+						<div style="text-align: center; width: 45px; display: inline-block;">
+							<span>ATK</span>
+							<input class="form-control" id="unit_editor_atk" style="width: 45px; text-align: center;" value="0" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+						<div style="text-align: center; width: 45px; display: inline-block;">
+							<span>DEF</span>
+							<input class="form-control" id="unit_editor_def" style="width: 45px; text-align: center;" value="0" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+						<div style="text-align: center; width: 45px; display: inline-block;">
+							<span>POW</span>
+							<input class="form-control" id="unit_editor_pow" style="width: 45px; text-align: center;" value="0" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+						<div style="text-align: center; width: 45px; display: inline-block;">
+							<span>TOU</span>
+							<input class="form-control" id="unit_editor_tou" style="width: 45px; text-align: center;" value="0" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+						<div style="text-align: center; width: 45px; display: inline-block;">
+							<span>MOR</span>
+							<input class="form-control" id="unit_editor_mor" style="width: 45px; text-align: center;" value="0" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+						<div style="text-align: center; width: 45px; display: inline-block;">
+							<span>COM</span>
+							<input class="form-control" id="unit_editor_com" style="width: 45px; text-align: center;" value="0" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-6">
+							<label for="unit_editor_damage">Damage</label>
+							<input class="form-control" id="unit_editor_damage" value="1" min="3" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+						<div class="col-6">
+							<label for="unit_editor_tier">Tier</label>
+							<input class="form-control" id="unit_editor_tier" min="1" max="5" value="1" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-6">
+							<label for="unit_editor_size">Size</label>
+							<input class="form-control" id="unit_editor_size" min="1" value="1" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+						<div class="col-6">
+							<label for="unit_editor_attacks">Attacks</label>
+							<input class="form-control" id="unit_editor_attacks" min="1" value="1" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-6">
+							<label for="unit_editor_experience">Experience</label>
+							<select class="form-control" id="unit_editor_experience">
+								<option>Levy</option>
+								<option selected="selected">Regular</option>
+								<option>Veteran</option>
+								<option>Elite</option>
+								<option>Super-elite</option>
+							</select>
+						</div>
+						<div class="col-6">
+							<label for="unit_editor_equipment">Equipment</label>
+							<select class="form-control" id="unit_editor_equipment">
+								<option>Light</option>
+								<option>Medium</option>
+								<option>Heavy</option>
+								<option>Super-heavy</option>
+							</select>
+						</div>
+					</div>
+					<div style="margin-top: 10px;">
+						<div class="btn btn-warning hidden" id="unit_editor_button_save" onclick="Unit_Manager.save_unit();">Update unit</div>
+						<div class="btn btn-success" onclick="Unit_Manager.save_unit(true);">Save new unit</div>
+						<div class="btn btn-danger" onclick="if (window.confirm('Really clear unit fields?')) {Unit_Manager.clear_fields()}">Clear</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="unit_import_export" class="mod hidden">
+			<h2>Import/Export Units</h2>
+			<textarea id="unit_import_export_data" style="width: 100%; height: 200px;"></textarea>
+			<div class="btn btn-success" onclick="GUI.units_import();">Import</div>
+			<div class="btn btn-warning" style="float: right;" onclick="GUI.units_export();">Export</div>
+			<div onclick="GUI.hide_modal('unit_import_export'); GUI.show_modal('unit_manager');" style="cursor: pointer; margin-top: 6px;">Return to unit manager</div>
+		</div>
+		<div id="commander_manager" class="mod hidden" onupdate="Commander_Manager.update_commander_manager_lists()" onmodalshow="commander_manager_color.jscolor.fromString(Utility.get_random_color()); commander_manager_color.jscolor.trigger('change input');">
+			<div class="mod_close_btn" onclick="GUI.hide_modal('commander_manager')"></div>
+			<h2>Commander manager</h2>
+			<h4 style="margin-top: 20px;">PC Commanders</h4>
+			<div id="commander_manager_pc_list" class="commander_list">
+				No commanders to list
+			</div>
+			<h4>DM Commanders</h4>
+			<div id="commander_manager_dm_list" class="commander_list">
+				No commanders to list
+			</div>
+			<input type="hidden" id="commander_manager_update_commander_id" value="" />
+			<div class="row" style="margin-top: 30px;">
+				<div class="col-9">Commander name:</div>
+				<div class="col-3">Units:</div>
+			</div>
+			<div class="row">
+				<div class="col-9"><input id="commander_manager_name" class="form-control" placeholder="Commander name" /></div>
+				<div class="col-3"><input id="commander_manager_unit_limit" title="Unit limit" class="form-control" min="1" value="2" onkeydown="Events.num_increment_decrement(event)" onclick="Events.field_auto_select(event)" /></div>
+			</div>
+			<div class="row">
+				<div class="col-6" style="padding-top: 6px;">
+					<div id="commander_manager_icon" class="turn_icon turn_icon_infinity" data-icon="infinity" style="cursor: pointer; background-color: #000000" onclick="GUI.show_modal('icon_selector', { x: event.clientX, y: event.clientY})"></div>
+					<div style="margin-top: 13px"><label class="black_white_color_switcher white"><input type="radio" id="commander_manager_icon_color_white" checked="checked" name="commander_manager_icon_color" onclick="commander_manager_icon.classList.remove('turn_icon_black');" /></label></div>
+					<div><label class="black_white_color_switcher black"><input type="radio" id="commander_manager_icon_color_black" name="commander_manager_icon_color" onclick="commander_manager_icon.classList.add('turn_icon_black');" /></label></div>
+				</div>
+				<div class="col-6">Cmdr color: <span class="random_cmdr_color_button" title="Randomise color" onclick="Commander_Manager.set_random_commander_color();"></span> <input id="commander_manager_color" class="form-control" data-jscolor="{}" value="#000000" oninput="commander_manager_icon.style.backgroundColor = this.value;" /></div>
+			</div>
+			<div style="margin-top: 20px;"></div>
+			<div id="commander_manager_save_buttons_new">
+				<div class="btn btn-success" onclick="Commander_Manager.commander_manager_add_pc()">Add PC Cmdr</div>
+				<div class="btn btn-warning" onclick="Commander_Manager.commander_manager_add_dm()" style="float: right;">Add DM Cmdr</div>
+			</div>
+			<div id="commander_manager_save_buttons_update" class="hidden">
+				<div class="btn btn-success" onclick="Commander_Manager.commander_manager_apply_commander_update()">Update Cmdr</div>
+				<div class="btn btn-danger" onclick="Commander_Manager.commander_manager_clear_fields()">Cancel</div>
+			</div>
+			<div>Presets:</div>
+			<div style="cursor: pointer; float: left; margin-right: 6px;" onclick="Commander_Manager.commander_manager_add_pc({ name: 'Player 1', id: 'pc1', icon: 'tiara', icon_color: '', color: '#FF0000', unit_limit: 2 });">Player 1</div>
+			<div style="cursor: pointer; float: left; margin-right: 6px;" onclick="Commander_Manager.commander_manager_add_pc({ name: 'Player 2', id: 'pc2', icon: 'crown', icon_color: '', color: '#827C21', unit_limit: 2 });">Player 2</div>
+			<div style="cursor: pointer; float: left; margin-right: 6px;" onclick="Commander_Manager.commander_manager_add_dm({ name: 'NPC 1', id: 'npc1', icon: 'crowned_skull', icon_color: '', color: '#7556DD', unit_limit: 3 });">NPC 1</div>
+			<div style="cursor: pointer; float: left; margin-right: 6px;" onclick="Commander_Manager.commander_manager_add_dm({ name: 'NPC 2', id: 'npc2', icon: 'hood', icon_color: '', color: '#008200', unit_limit: 3 });">NPC 2</div>
+		</div>
+		<div id="trait_manager" class="mod wide hidden" onmodalshow="Trait_Manager.update_trait_manager_list()">
+			<div class="mod_close_btn" onclick="GUI.hide_modal('trait_manager')"></div>
+			<input type="hidden" id="trait_manager_trait_id" />
+			<h2>Trait manager</h2>
+			<div class="row">
+				<div class="col-8">Trait title:</div>
+				<div class="col-4">Trait type:</div>
+			</div>
+			<div class="row">
+				<div class="col-8"><input class="form-control" id="trait_manager_trait_name" /></div>
+				<div class="col-4"><select class="form-control" id="trait_manager_trait_type">
+					<option value="passive">Passive</option>
+					<option value="action">Action</option>
+					<option value="condition">Conditional</option>
+					<option value="reaction">Reaction</option>
+				</select></div>
+			</div>
+			<div class="row">
+				<div class="col-12">Trait description</div>
+			</div>
+			<div class="row">
+				<div class="col-12">
+					<textarea class="form-control" id="trait_manager_trait_description" onpaste="Trait_Manager.Events.on_description_paste(event)"></textarea>
+				</div>
+			</div>
+			<div style="margin-top: 10px; margin-bottom: 10px;" id="trait_manager_buttons_save">
+				<div class="btn btn-success" onclick="Trait_Manager.trait_add();">Save trait</div>
+			</div>
+			<div style="margin-top: 10px; margin-bottom: 10px;" id="trait_manager_buttons_edit" class="hidden">
+				<div class="btn btn-warning" onclick="Trait_Manager.update_trait();">Update trait</div>
+				<div class="btn btn-secondary" onclick="Trait_Manager.clear_fields();">Cancel</div>
+				<div class="btn btn-danger" style="float: right;" onclick="Trait_Manager.delete_trait();">Delete trait</div>
+			</div>
+			<div id="trait_manager_trait_list">
+				<div class="trait_entry passive">
+					<div class="trait_title">AAAUUUGH!!!</div>
+					<div class="trait_description">When this unit breaks, all adjacent units suffer 1 casualty.</div>
+				</div>
+				<div class="trait_entry passive">
+					<div class="trait_title">Amphibious</div>
+					<div class="trait_description">This unit does not suffer movement penalties when fighting underwater, or in rain or mud.</div>
+				</div>
+				<div class="trait_entry condition">
+					<div class="trait_title">Big</div>
+					<div class="trait_description"> This unit has advantage on Power tests against units whose casualties are lower than this unit’s.</div>
+				</div>
+				<div class="trait_entry action">
+					<div class="trait_title">Chorus of Victory</div>
+					<div class="trait_description">As an action, choose a rank on the battlefield. Each allied unit in that rank
+						increments its casualty die and has advantage on Attack tests until the end of its next activation.
+						Recharge 6.</div>
+				</div>
+			</div>
+		</div>
+		<!-- </editor-fold> -->
+
+		<div id="changelog_panel" class="changelog_panel mod extra_wide hidden">
+			<div class="mod_close_btn" onclick="GUI.hide_modal('changelog_panel')"></div>
+			<div class="changelog_info">
+				<p>Hey! You have arrived at the Kingdoms & Warfare Battlefield! Where armies prove themselves on the... field of battle...</p>
+				<p>Anyway, if you're new here you should read the <a target="none" href="./help">help document</a> which contains usage information, troubleshooting, credits, etc.</p>
+				<div>If you need additional help, or wish to report a bug, or suggest a feature or improvement:</div>
+				<ul>
+					<li><a href="https://github.com/Forecaster/KingdomsAndWarefareBattlefield/issues">GitHub Issue tracker</a> (Requires logging in)</li>
+					<li><a href="https://discord.gg/mcdm">MCDM Discord</a> (<code>#mcdm_kingsdoms-warfare</code>)</li>
+					<li><a href="https://discord.gg/mx849JN">Forecaster's Discord</a></li>
+					<li>Email <a href="mailto:feedback@towerofaweoms.org">feedback@towerofaweoms.org</a>. Please put `<code>kawbattlefield</code>` in the subject to bypass spam filtering</li>
+				</ul>
+			</div>
+			<div id="changelog_container" class="changelog_container">
+				<div id="v0.1.2" class="changelog_version">
+					<div class="title">
+						<div class="version">v0.1.2</div>
+						<div class="date">2021-08-07</div>
+					</div>
+					<div class="changelog_category">Menu</div>
+					<ul>
+						<li class="new">Menu auto hides by default, toggle pinned to prevent. When pinned menu will still hide and show as normal with buttons</li>
+						<li class="fix">Out of formation box and chat panel changing size when menu hides</li>
+					</ul>
+					<div class="changelog_category">Unit manager</div>
+					<ul>
+						<li class="change">Make traits in trait list more compact</li>
+						<li class="change">Make trait search field only search in trait title</li>
+					</ul>
+					<div class="changelog_category">Commander manager</div>
+					<ul>
+						<li class="fix">Coins icon using gem image</li>
+						<li class="new">+13 commander icons</li>
+					</ul>
+					<div class="changelog_category">Unit</div>
+					<ul>
+						<li class="change">Make trait titles smaller</li>
+					</ul>
+					<div class="changelog_category">Battlefield</div>
+					<ul>
+						<li class="new">Unit count on spaces with 2 or more units on it</li>
+						<li class="new">
+							Tier totals panel in upper left shows sum of each commander's unit tiers and total of each side (Player vs NPC)
+							<ul>
+								<li>Table is updated when unit is added to the board, deleted, or its health changes</li>
+								<li>Units with a health value of 0 does not count toward the tier total</li>
+								<li>Units in the out of formation box are counted, unless their health is 0</li>
+								<li>Total turns green when a sides total is greater than twice the opposing sides total</li>
+							</ul>
+						</li>
+						<li class="change">Further smooth out animations when ranks collapse</li>
+						<li class="fix">Collapsed ranks no longer overlap rank below making unit movement difficult</li>
+					</ul>
+				</div>
+				<div id="v0.1.1" class="changelog_version">
+					<div class="title">
+						<div class="version">v0.1.1</div>
+						<div class="date">2021-08-06</div>
+					</div>
+					<div class="changelog_category">General</div>
+					<ul>
+						<li class="new">Implement chat message system</li>
+					</ul>
+					<div class="changelog_category">Battlefield</div>
+					<ul>
+						<li class="change">Animate ranks collapsing/un-collapsing</li>
+					</ul>
+					<div class="changelog_category">Units</div>
+					<ul>
+						<li class="new">Animate ranks collapsing/un-collapsing</li>
+						<li class="change">Refactor movement system
+							<ul>
+								<li>Indicate all valid moves with green line</li>
+								<li>Indicate all invalid moves with red line</li>
+								<li>Print error if trying to execute invalid move</li>
+							</ul>
+						</li>
+						<li class="change">Bubble menu appears on right-click anywhere on unit instead of left-click on health number</li>
+						<li class="change">Unit expands on double click anywhere instead of right-click on unit background</li>
+					</ul>
+					<div class="changelog_category">Commander manager</div>
+					<ul>
+						<li class="change">Clamp height of commander lists and add scrollbars</li>
+					</ul>
+					<div class="changelog_category">Unit manager</div>
+					<ul>
+						<li class="new">Trait checkbox list with search field</li>
+						<li class="change">Update unit name placeholder to indicate default name</li>
+					</ul>
+					<div class="changelog_category">Trait manager (New)</div>
+					<ul>
+						<li class="new">Implement trait manager & trait system</li>
+						<li class="new">Trait manager automatically tries to assign type when description is pasted in</li>
+						<li class="new">Trait manager removes line-breaks from description when pasted in</li>
+					</ul>
+				</div>
+			</div>
+			<script>
+				let last_version = Utility.getCookie("kaw_version");
+				let container = document.getElementById("changelog_container");
+				let version_groups = container.querySelectorAll(".changelog_version");
+				let count = 0;
+				for (let i = 0; i < version_groups.length; i++) {
+					let group = version_groups[i];
+					// console.info(group.id + " <= " + last_version + " = " + (group.id <= last_version))
+					if (last_version != "" && group.id <= last_version)
+						group.classList.add("hidden");
+					else
+						count++;
+				}
+				if (count > 0)
+					GUI.show_modal("changelog_panel");
+				Utility.setCookie("kaw_version", version_groups[0].id);
+			</script>
+		</div>
+	</body>
+	<script>
+		// <editor-fold desc="Config">
+		const signal_url = "https://towerofawesome.org/kawbattlefield/signal_manager";
+
+		let settings = {
+			allow_client_units: true,
+			allow_free_movement: true,
+			board_colors_enabled: true,
+			enforce_unit_movement: true,
+			trait_description_correction: true,
+		};
+		let unit_store = [];
+		let trait_store = {};
+		// </editor-fold>
+
+		// <editor-fold desc="Common Data">
+		let id = null;
+		let turn_icons = [
+			"infinity",
+			"mask",
+			"goo",
+			"brush",
+			"magnifying_glass",
+			"spyglass",
+			"pirate",
+			"banner_tattered",
+			"banner",
+			"banner_knight",
+			"gem",
+			"coins",
+			"rook",
+			"queen",
+			"knight",
+			"king",
+			"armor",
+			"fist",
+			"helmet",
+			"crown",
+			"crowned_skull",
+			"hood",
+			"tiara",
+			"robin_hood",
+			"turban",
+			"card",
+			"pawn",
+			"pin",
+			"bolt",
+			"catapult",
+			"cog",
+			"gears",
+			"sword",
+			"wing",
+			"notebook",
+			"person",
+			"dice",
+			"pitchfork",
+		];
+		let commanders = [];
+		// </editor-fold>
+
+		// <editor-fold desc="Host Data">
+		let host = false;
+		let clients = [];
+		let interval_client_scan = null;
+		let turn_counter = 0;
+		let round_counter = 0;
+		// </editor-fold>
+
+		// <editor-fold desc="Client Data">
+		let host_id = null;
+		let nickname = "Host";
+		let host_connection = null;
+		// </editor-fold>
+
+		const peer = new Peer();
+
+		peer.on('connection', function(conn) {
+			console.info("Client connection established!");
+			conn.on('data', onDataReceived);
+		});
+
+		// <editor-fold desc="Fields">
+		const host_id_output = document.getElementById("host_id_output");
+		const host_id_input = document.getElementById("host_id_input");
+		const nickname_input = document.getElementById("nickname_input");
+		const client_error_output = document.getElementById("client_error_output");
+		const unit_editor_current_unit_index = document.getElementById("unit_editor_current_unit_index");
+		const unit_editor_name = document.getElementById("unit_editor_name");
+		const unit_editor_type = document.getElementById("unit_editor_type");
+		const unit_editor_ancestry = document.getElementById("unit_editor_ancestry");
+		const unit_editor_atk = document.getElementById("unit_editor_atk");
+		const unit_editor_def = document.getElementById("unit_editor_def");
+		const unit_editor_pow = document.getElementById("unit_editor_pow");
+		const unit_editor_tou = document.getElementById("unit_editor_tou");
+		const unit_editor_mor = document.getElementById("unit_editor_mor");
+		const unit_editor_com = document.getElementById("unit_editor_com");
+		const unit_editor_experience = document.getElementById("unit_editor_experience");
+		const unit_editor_equipment = document.getElementById("unit_editor_equipment");
+		const unit_editor_tier = document.getElementById("unit_editor_tier");
+		const unit_editor_damage = document.getElementById("unit_editor_damage");
+		const unit_editor_size = document.getElementById("unit_editor_size");
+		const unit_editor_attacks = document.getElementById("unit_editor_attacks");
+		const unit_import_export_data = document.getElementById("unit_import_export_data");
+		const commander_manager_name = document.getElementById("commander_manager_name");
+		const commander_manager_unit_limit = document.getElementById("commander_manager_unit_limit");
+		const commander_manager_color = document.getElementById("commander_manager_color");
+		const commander_manager_icon = document.getElementById("commander_manager_icon");
+		const commander_manager_icon_color_black = document.getElementById("commander_manager_icon_color_black");
+		const commander_manager_update_commander_id = document.getElementById("commander_manager_update_commander_id");
+		const chat_panel_input = document.getElementById("chat_panel_input");
+		const trait_manager_trait_name = document.getElementById("trait_manager_trait_name");
+		const trait_manager_trait_type = document.getElementById("trait_manager_trait_type");
+		const trait_manager_trait_description = document.getElementById("trait_manager_trait_description");
+		const trait_manager_trait_id = document.getElementById("trait_manager_trait_id");
+		const unit_manager_trait_search = document.getElementById("unit_manager_trait_search");
+		// </editor-fold>
+
+		// <editor-fold desc="Elements">
+		let battlefield = document.getElementById("battlefield");
+		const host_clients_wait = document.getElementById("host_clients_wait");
+		const host_clients_connected = document.getElementById("host_clients_connected");
+		const host_clients_list = document.getElementById("host_clients_list");
+		const unit_editor_unit_list = document.getElementById("unit_editor_unit_list");
+		const unit_editor_button_save = document.getElementById("unit_editor_button_save");
+		const menu_panel = document.getElementById("menu_panel");
+		const menu_panel_unit_container = document.getElementById("menu_panel_unit_container");
+		const bubble_menu = document.getElementById("bubble_menu");
+		const bub1 = document.getElementById("bub1");
+		const bub2 = document.getElementById("bub2");
+		const bub3 = document.getElementById("bub3");
+		const bub4 = document.getElementById("bub4");
+		const canvas = document.getElementById("overlay");
+		const turn_tracker = document.getElementById("turn_tracker");
+		const turn_tracker_entries = document.getElementById("turn_tracker_entries");
+		const turn_indicator = document.getElementById("turn_indicator");
+		const icon_selector = document.getElementById("icon_selector");
+		const commander_manager = document.getElementById("commander_manager");
+		const commander_manager_pc_list = document.getElementById("commander_manager_pc_list");
+		const commander_manager_dm_list = document.getElementById("commander_manager_dm_list");
+		const commander_manager_save_buttons_new = document.getElementById("commander_manager_save_buttons_new");
+		const commander_manager_save_buttons_update = document.getElementById("commander_manager_save_buttons_update");
+		const turn_display = document.getElementById("turn_display");
+		const round_display = document.getElementById("round_display");
+		const unit_owner_styles = document.getElementById("unit_owner_styles");
+		const unit_owner_turn_styles = document.getElementById("unit_owner_turn_styles");
+		const chat_panel_messages = document.getElementById("chat_panel_messages");
+		const trait_manager = document.getElementById("trait_manager");
+		const trait_manager_trait_list = document.getElementById("trait_manager_trait_list");
+		const trait_manager_buttons_save = document.getElementById("trait_manager_buttons_save");
+		const trait_manager_buttons_edit = document.getElementById("trait_manager_buttons_edit");
+		const unit_manager_trait_list = document.getElementById("unit_manager_trait_list");
+		const out_of_formation = document.getElementById("out_of_formation");
+		const tier_list = document.getElementById("tier_list");
+		// </editor-fold>
+	</script>
+	<script>
+		// <editor-fold desc="INIT">
+		window.onresize = Events.on_window_resize;
+		Events.on_window_resize({});
+
+		Data.load_data();
+		Board.replace_battlefield(Generate_Element.generate_battlefield());
+
+		setInterval(function() {
+			let ranks = document.body.querySelectorAll(".rank");
+			for (let i in ranks) {
+				if (ranks[i].ondblclick === null)
+					ranks[i].ondblclick = function(event) {
+						let rank = Board.find_parent_rank(event.target);
+						if (rank.classList.contains("rank_collapsed"))
+							rank.classList.remove("rank_collapsed");
+						else
+							rank.classList.add("rank_collapsed");
+					}
+			}
+		}, 1000);
+
+		GUI.hide_modal("host_or_client");
+		// GUI.show_modal("unit_manager");
+		// GUI.show_modal("trait_manager");
+	</script>
+</html>
