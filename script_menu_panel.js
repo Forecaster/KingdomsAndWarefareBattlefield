@@ -92,8 +92,6 @@ const Menu_Panel = {
 				groups["ungrouped"].push(unit);
 			}
 		}
-		console.info(groups);
-		console.info(group_order);
 		menu_panel_unit_container.innerHTML = "";
 		for (let i = 0; i < group_order.length; i++) {
 			let group = group_order[i];
