@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Help | Kingdoms & Warfare Battlefield</title>
+	</head>
+	<style>
+		body {
+			background-color: #1b1b1b;
+			color: white;
+			padding: 20px;
+			font-size: 14pt;
+		}
+
+		a {
+			color: #5cabff;
+		}
+
+		a:visited {
+			color: #5cabff;
+		}
+
+		t {
+			color: #73ff00;
+		}
+
+		.future {
+			color: #4e4e4e;
+		}
+
+		h4 {
+			text-decoration: underline;
+		}
+
+		.hl {
+			color: #ff8080;
+		}
+
+		.section > :first-child {
+			cursor: pointer;
+		}
+
+		.section > :first-child:before {
+			background-image: url("../icons/chevron-down.svg");
+			height: 1em;
+			display: inline-block;
+			content: "";
+			width: 1em;
+			background-size: contain;
+			margin-right: 6px;
+		}
+		.section.collapsed :first-child:before {
+			background-image: url("../icons/chevron-right.svg");
+		}
+
+		.section.collapsed .inner_section {
+			display: none;
+		}
+
+		.inner_section {
+			margin-left: 32px;
+			background-color: #2d2d2d;
+			padding: 5px;
+			border-radius: 5px;
+		}
+
+		.inner_section p {
+			margin-left: 5px;
+		}
+	</style>
+	<body>
+		<h1>Kingdoms & Warfare Battlefield</h1>
+		<p>Hi! This is the Battlefield application made for the Kingdoms & Warfare supplement for Dungeons & Dragons 5th edition!<br/>
+			In this document you will find a lot of information about this application, including but not limited to usage information, credits, and upcoming features!
+		</p>
+
+		<h2>> About this project</h2>
+
+		<div class="section">
+			<h3>UI scale</h3>
+			<p>A quick note about interface scaling, the UI is designed for a 1080p monitor (minus browser elements), if you have a bigger or smaller
+				monitor you can use the browser page zoom (usually <code>ctrl + scroll</code>) to scale the UI to fit better. In the future the
+				battlefield itself won't be static, but will be pan-able and zoom-able independently of the UI.</p>
+		</div>
+
+		<div class="section">
+			<h3>The alpha stage</h3>
+			<p>In its current state the application features adding commanders, creating or importing units, creating traits. Units have various stats and other information.
+				It features a battlefield onto which units can be placed and moved around.</p>
+			<p class="hl">Keep in mind that as the application develops things may change and parts of the following instructions may become wrong or obsolete.</p>
+			<p>Keep an eye on the changelog box that appeared when you first opened the application. It will show up again and list changes made since your last visit!</p>
+		</div>
+
+		<div class="section collapsed">
+			<h3>What's Kingdoms & Warfare</h3>
+			<p>K&W is the followup to the Strongholds & Followers supplement also released by MCDM.</p>
+			<p>While S&F introduces player settlements in and retainers K&W increases the scale significantly with the introduction of potentially kingdom-sized organizations and large scale warfare and diplomacy alongside your regular heroic D&D shenanigans (level of heroism may vary).</p>
+			<p>In K&W warfare is enacted with units which represent groups (usually) of combatants of different kinds. These are deployed by commanders (Characters) with one side being the player characters and the other being controlled by the DM.</p>
+		</div>
+
+		<div class="section collapsed">
+			<h3>What's K&WBattlefield</h3>
+			<p>K&W Battlefield was inspired by the Miro boards Matt used on his streams to enact battles. In these I noticed some time was spent centering unit cards in the spaces and adding or removing effect icons for example.</p>
+			<p>I decided I should make a proper digital version of that. I looked around and found that someone had made it into some kind of game, but it didn't seem to be meant to be used for playing D&D but was its own thing?</p>
+			<p>So I went ahead with my idea and started trying to figure out WebRTC to work. About a week later and many failures I decided to use a library for it instead, since I couldn't get a working connection.</p>
+			<p>So on August 1st I started working on the actual interface and did some small tests with the networking library which worked great.</p>
+			<p>Now 8 days later the application can be used to enact warfare locally, but has no network functionality yet.</p>
+		</div>
+
+		<h2>> How do I use the application?</h2>
+
+		<h4>> Getting started</h4>
+
+		<div class="section collapsed">
+			<h3>Commanders</h3>
+			<p>To start, create at least 1 commander using the <t>Commander Manager</t>:<br/>
+				<img alt="Commander manager button" src="commander_manager_button.png" /></p>
+			<p>Creating a commander involves a name, the maximum number of units (the character's proficiency bonus), choosing an icon and a color.</p>
+			<p class="future">When networking is implemented the intention is that a connecting player will create their commander.</p>
+			<p>At least two commanders are needed for the turn tracker to work. Created commanders are automatically added to the turn tracker.</p>
+		</div>
+
+		<div class="section collapsed">
+			<h3>Units</h3>
+			<p>Units are listed in the <t>Unit library</t> in the menu panel. These can be dragged into the battlefield and are assigned to the commander whose turn it is currently, which is indicated by the border color around the unit.<br/>
+				Round 0 is also considered the deployment round. During this round units can be stacked in the reserve ranks.</p>
+			<img alt="Unit list" src="unit_list.png" />
+			<p>If you have no units open the <t>Unit manager</t> and create some. You can also create one, then open the export window and export it.<br/>
+				You then have the JSON format for unit import/export and can create all the units you want at once and then import them.</p>
+			<img alt="Unit manager button" src="unit_manager_button.png" />
+			<p>In the <t>Trait manager</t> you can create traits that can be assigned to units. Traits are there for quick reference only currently.</p>
+			<p>Traits can be one of four types:
+				<ul>
+					<li>Passive - These traits are always in effect and usually give some sort of bonus to the unit, or make it immune to something</li>
+					<li>Action - These give the unit one or more additional choices for its action</li>
+					<li>Conditional - These are similar to passive, but only apply under certain conditions, such as when engaging a particular unit type</li>
+					<li>Reaction - These enable the unit to do something in response to a specific event by using its reaction</li>
+				</ul>
+			</p>
+			<p class="future">In the future there may be a way to mark recharging traits as spent and to remind the commander about rolling for recharge on their turn. "Recharge" would then be added as an additional type.</p>
+			<img alt="Unit card" src="unit_card_compact.png" />
+			<p>A unit card has 7 components:</p>
+			<ol>
+				<li>A symbol representing the units type.</li>
+				<li>The red number represents the units damage.</li>
+				<li>If the unit has more than one attack this will be displayed next to the damage.</li>
+				<li>The units health. When the unit suffers a casualty this number goes down.</li>
+				<li>The units original size. If the current health is less than half of this both these numbers will turn red.</li>
+				<li>The units name. If no special name has been entered this will be the units' ancestry + type.</li>
+				<li>The colored border around the unit indicates the units commander.</li>
+			</ol>
+			<img alt="Unit card expanded" src="unit_card.png" />
+			<p>By <t>double-clicking</t> a unit card it will expand, revealing additional information about the unit.<br/>
+				Currently this includes the units stats, and traits if any.</p>
+			<img alt="Bubble menu" src="bubble_menu.png" />
+			<p>By <t>right-clicking</t> a unit card (unless it is in the <t>Unit library</t>) the bubble menu will appear.<br/>
+				The bubble menu enables the following interactions with the unit:</p>
+			<ol>
+				<li>Remove casualty (increment health).</li>
+				<li>Delete unit (Cannot be undone except by dragging a new unit onto the battlefield from the <t>Unit library</t>).</li>
+				<li>Add casualty (decrement health).</li>
+				<li>Toggle <t>Activated</t> for the unit (All activated units are restored when the turn changes).</li>
+				<li>The middle button closes the bubble menu.</li>
+			</ol>
+		</div>
+
+		<div class="section collapsed">
+			<h3>The Turn Tracker</h3>
+			<img alt="Turn tracker" src="turn_tracker.png" />
+			<p>When a commander is created their icon is added to the <t>Turn tracker</t>. The number underneath is their initiative.<br/>
+				When a commanders initiative is changed the icons are sorted accordingly.<br/>
+				Click the icon next to the <t>Turn tracker</t> to advance the turn.</p>
+		</div>
+
+		<div class="section collapsed">
+			<h3>Tier totals</h3>
+			<img alt="Tier totals" src="tier_totals.png" />
+			<p>If you hover the cursor over the tab in the top left the <t>Tier totals</t> panel will appear.</p>
+			<p>This panel shows the total tier of each commander with units on the board with health above zero.</p>
+			<p>It also shows the sum of each side (Players vs NPCs), and if one side has more than double the score of the other<br/>
+				That number will be green, indicating that sides victory.</p>
+		</div>
+
+		<div class="section collapsed">
+			<h3>The battlefield</h3>
+			<p>The titular battlefield features two sides. Each side has a mirrored set of ranks, and each rank has 5 spaces.</p>
+			<p>Each space can hold one unit, except in the <t>Reserve rank</t>, which during Round 0 can have multiple units stacked in each space.</p>
+			<p>At the start of each turn if a rank has no units in it, it will automatically collapse. You can manually toggle a ranks collapsed state by <t>double-clicking</t> it.</p>
+			<p>Also part of the battlefield is the <t>Out of formation</t> box. Although it is attached the interface units can be deployed here and feature the same interactions as ranked units.</p>
+		</div>
+
+		<h2>Credits</h2>
+		<p>This project makes use of some libraries and a number of other assets without which development would have taken significantly longer. These are as follows:</p>
+		<ul>
+			<li><a href="https://peerjs.com">PeerJS</a> - Javascript library for WebRTC peer-to-peer data, video, & audio API. (<span>MIT</span>)</li>
+			<li><a href="https://jscolor.com">jscolor.js</a> - Javascript library for customizable color pickers. (<span>GNU GPL v3</span>)</li>
+			<li><a href="https://game-icons.net">Game-icons.net</a> - Library of customizable SVG icons (CC-BY (generally))</li>
+			<li><a href="https://getbootstrap.com/">Bootstrap</a> - Styling framework for HTML (MIT)</li>
+		</ul>
+
+		<p>Thanks to people in the MCDM Discord who have provided feedback and suggestions and shown interest in the project! I'm not going to list names, but you know who you are!</p>
+	</body>
+
+	<script>
+		let sections = document.body.querySelectorAll(".section");
+		for (let i = 0; i < sections.length; i++) {
+			let section = sections[i];
+			let inner_section = document.createElement("div");
+			inner_section.className = "inner_section";
+			let move_children = [];
+			for (let y = 1; y < section.children.length; y++) {
+				move_children.push(section.children[y]);
+			}
+			for (let y = 0; y < move_children.length; y++)
+				inner_section.appendChild(move_children[y]);
+			section.appendChild(inner_section);
+			section.children[0].onclick = function(event) {
+				let parent = event.target.parentElement;
+				if (parent.classList.contains("collapsed"))
+					parent.classList.remove("collapsed");
+				else
+					parent.classList.add("collapsed");
+			};
+		}
+	</script>
+</html>
