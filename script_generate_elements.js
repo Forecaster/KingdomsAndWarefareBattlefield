@@ -93,35 +93,35 @@ const Generate_Element = {
 		unit.className = "unit";
 		unit.draggable = draggable;
 		let type = document.createElement("div");
-		type.className = "unit_type " + u.type.toLowerCase();
+		type.className = "unit_type " + Unit_Manager.get_unit_property(u, "type").toLowerCase();
 		unit.appendChild(type);
 		let attack_box = document.createElement("div");
 		attack_box.className = "unit_attack_box";
 		unit.appendChild(attack_box);
 		let damage = document.createElement("div");
 		damage.className = "unit_damage";
-		damage.innerText = u.damage;
+		damage.innerText = Unit_Manager.get_unit_property(u, "damage");
 		attack_box.appendChild(damage);
 		let attacks = document.createElement("div");
 		attacks.className = "unit_attacks";
 		if (u.attacks > 1)
-			attacks.innerText = "×" + u.attacks;
+			attacks.innerText = "×" + Unit_Manager.get_unit_property(u, "attacks");
 		attack_box.appendChild(attacks);
 		let health_box = document.createElement("div");
 		health_box.className = "unit_health";
 		let casualties = document.createElement("div");
 		casualties.className = "casualties";
-		casualties.innerText = u.size;
+		casualties.innerText = Unit_Manager.get_unit_property(u, "size");
 		health_box.appendChild(casualties);
 		let size = document.createElement("div");
 		size.className = "unit_size";
-		size.innerText = "/" + u.size;
+		size.innerText = "/" + Unit_Manager.get_unit_property(u, "size");
 		health_box.appendChild(size);
 		unit.appendChild(health_box);
 		let name = document.createElement("div");
 		name.className = "unit_name";
-		name.innerText = u.name || u.ancestry + " " + u.type;
-		name.title = u.name || u.ancestry + " " + u.type;
+		name.innerText = Unit_Manager.get_unit_property(u, "name");
+		name.title = name.innerText;
 		unit.appendChild(name);
 		let stats = document.createElement("div");
 		stats.className = "stats";
@@ -170,6 +170,9 @@ const Generate_Element = {
 			}
 			unit.appendChild(traits);
 		}
+		let effects = document.createElement("div");
+		effects.className = "unit_effect_container";
+		effects.innerHTML = "<div class='unit_effect_money' />";
 		Generate_Element.set_unit_events(unit);
 		return unit;
 	},

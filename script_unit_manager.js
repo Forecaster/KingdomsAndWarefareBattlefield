@@ -204,9 +204,15 @@ const Unit_Manager = {
 			GUI.hide_modal('unit_import_export');
 			GUI.show_modal('unit_manager');
 		} catch (e) {
-			unit_import_export_error.innerText = "An error occurred while importing. Check that the Json is valid. Check the console for more details.";
-			unit_import_export_error.classList.remove("hidden");
+			Chat.send_chat_error("An error occurred while importing. Check that the Json is valid. Check the console for more details.");
 			console.error(e);
 		}
 	},
+
+	get_unit_property: function(unit, property) {
+		if (property == "name")
+			return unit.name || unit.ancestry + " " + unit.type;
+		else
+			return unit[property];
+	}
 }

@@ -35,7 +35,7 @@
 
 		<!-- <editor-fold> GUI ELEMENTS -->
 		<div class="menu_panel_show_button" onclick="Menu_Panel.show_menu_panel()"></div>
-		<div class="menu_panel concealed" id="menu_panel" onmodalshow="Menu_Panel.update_unit_list();" onmouseleave="Menu_Panel.Events.on_panel_leave(event)" onmouseenter="Menu_Panel.Events.on_panel_enter(event)">
+		<div class="menu_panel concealed" id="menu_panel" onmodalshow="Menu_Panel.update_unit_list('name');" onmouseleave="Menu_Panel.Events.on_panel_leave(event)" onmouseenter="Menu_Panel.Events.on_panel_enter(event)">
 			<div class="menu_button hide_menu" onclick="Menu_Panel.hide_menu_panel()" title="Hide menu"></div>
 			<div class="menu_button pin_menu" onclick="Menu_Panel.toggle_pin_menu_panel()" title="Toggle pin menu"></div>
 <!--			<div class="menu_button settings" onclick="" title="Settings"></div>-->
@@ -44,6 +44,13 @@
 			<div class="menu_button commander_manager" onclick="GUI.show_modal('commander_manager')" title="Commander manager"></div>
 			<div class="menu_divider"></div>
 			<h4>Unit library</h4>
+			<div class="unit_library_filter_buttons">
+				<span onclick="Menu_Panel.update_unit_list('name')">By name</span>
+				<span onclick="Menu_Panel.update_unit_list('type')">By type</span>
+				<span onclick="Menu_Panel.update_unit_list('ancestry')">By ancestry</span>
+				<span onclick="Menu_Panel.update_unit_list('tier')">By tier</span>
+				<span onclick="Menu_Panel.update_unit_list('size')">By size</span>
+			</div>
 			<div id="menu_panel_unit_container"></div>
 			<div id="out_of_formation" class="out_of_formation" ondragenter="Board.Events.on_drag_enter(event)">
 				<h4 style="text-align: center; margin-top: 4px;">Out of formation</h4>

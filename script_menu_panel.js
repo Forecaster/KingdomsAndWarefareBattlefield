@@ -68,11 +68,50 @@ const Menu_Panel = {
 
 	/**
 	 * Refresh list of unit cards in menu panel from `unit_store`
+	 * @param filter:string Optional filter parameter, groups units by specified field
 	 */
-	update_unit_list: function() {
-		menu_panel_unit_container.innerHTML = "";
+	update_unit_list: function(filter = null) {
+		let group_order = [];
+		let groups = {
+			ungrouped: []
+		};
 		for (let i = 0; i < unit_store.length; i++) {
-			menu_panel_unit_container.appendChild(Generate_Element.generate_unit(unit_store[i], i));
+			let unit = unit_store[i];
+			if (unit.hasOwnProperty(filter)) {
+				let property = Unit_Manager.get_unit_property(unit, filter);
+				if (filter == "name")
+					property = property[0];
+				if (!groups.hasOwnProperty(property) || property == "") {
+					groups[property] = [unit];
+					group_order.push(property);
+					group_order.sort();
+				} else {
+					groups[property].push(unit);
+				}
+			} else {
+				groups["ungrouped"].push(unit);
+			}
+		}
+		console.info(groups);
+		console.info(group_order);
+		menu_panel_unit_container.innerHTML = "";
+		for (let i = 0; i < group_order.length; i++) {
+			let group = group_order[i];
+			let header = document.createElement("h4");
+			header.innerText = group;
+			menu_panel_unit_container.appendChild(header);
+			for (let y = 0; y < groups[group].length; y++) {
+				let unit = groups[group][y];
+				menu_panel_unit_container.appendChild(Generate_Element.generate_unit(unit, unit_store.indexOf(groups[group][y])));
+			}
+		}
+		if (group_order.length !== 0 && groups["ungrouped"].length > 0) {
+			let header = document.createElement("h4");
+			header.innerText = "Ungrouped";
+			menu_panel_unit_container.appendChild(header);
+		}
+		for (let i = 0; i < groups["ungrouped"].length; i++) {
+			menu_panel_unit_container.appendChild(Generate_Element.generate_unit(groups["ungrouped"][i], i));
 		}
 	},
 }

@@ -469,6 +469,13 @@ label > input[type=checkbox] {
 	padding: 0;
 }
 
+.unit .unit_effect_container {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 200px;
+}
+
 /* </editor-fold> */
 
 /* <editor-fold desc="Unit manager"> */
@@ -580,7 +587,7 @@ label > input[type=checkbox] {
 	top: 10px;
 	right: 10px;
 	height: calc(100% - 20px);
-	width: 330px;
+	width: 338px;
 	background-color: darkslategray;
 	border-radius: 10px;
 	transition-property: transform;
@@ -642,6 +649,32 @@ label > input[type=checkbox] {
 	margin-bottom: 15px;
 	border-top: 1px solid white;
 	width: 100%;
+}
+
+.unit_library_filter_buttons > span {
+	float: left;
+	background-color: #667fa8;
+	padding: 3px;
+	border-radius: 10px;
+	margin-top: 3px;
+	margin-right: 3px;
+	cursor: pointer;
+}
+
+.unit_library_filter_buttons:after {
+	content: '';
+	display: block;
+	clear: both;
+}
+
+#menu_panel_unit_container {
+	height: calc(100% - 160px);
+	overflow-y: scroll;
+}
+
+#menu_panel_unit_container h4 {
+	width: 100%;
+	clear: both;
 }
 /* </editor-fold> */
 
